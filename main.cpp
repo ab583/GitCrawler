@@ -74,13 +74,7 @@ int main(int argc, const char* argv[]){
 
     // create database if it doesnt exist
     DatabaseIo db;
-    try {
-        db.createDatabase();
-    } catch(sql::SQLException& e){
-        std::cout << "Error: " << e.what() << std::endl;
-        std::cout << "MySQL error code: " << e.getErrorCode();
-        std::cout << ", SQLState: " << e.getSQLState() << std::endl;
-    }
+    db.createDatabase();
 
     // Note: repos start at 1.
     Handler h(1, 5000, 3, 1);
@@ -94,7 +88,7 @@ int main(int argc, const char* argv[]){
     return 0;
 }
 
-void calculateStatistics(int argc, const char *argv[]){
+void calculateStatistics(){
     Statistics s;
     //s.processProjects(0, 20000000);
 

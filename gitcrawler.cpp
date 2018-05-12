@@ -86,7 +86,7 @@ time_t GitCrawler::extractResetTime(const std::string& request){
     return extractDigits(request, findDigit(request, idx));
 }
 
-unsigned int GitCrawler::parseRepos(std::stringstream repos,
+repoId_t GitCrawler::parseRepos(std::stringstream repos,
                                     repoId_t startId,
                                     repoId_t endId){
 

@@ -29,9 +29,10 @@ public:
     // Parses the output from getRepos, returns the id of the last repo parsed (ascending order),
     // adds the repos to the database
     // only processes projects where startId <= projectId <= endId
-    unsigned int parseRepos(std::stringstream repos,
-                            repoId_t startId = 0,
-                            repoId_t endId = ~0);
+    // returns ~0 when past final repo
+    repoId_t parseRepos(std::stringstream repos,
+                        repoId_t startId = 0,
+                        repoId_t endId = ~0);
 
     // Parses the output from getLanguages, inserts the languages into the database
     void parseLanguages(repoId_t projectId,
@@ -46,7 +47,7 @@ public:
 
     static unsigned int getRemainingRequests();
     void getRates(unsigned int& remainingRequests,
-                         time_t& resetTime);
+                  time_t& resetTime);
 
     // form: yyyy-MM-ddThh:mm:ssZ
     // expl: 2008-02-09T16:36:15Z

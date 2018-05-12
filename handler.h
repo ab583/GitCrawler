@@ -5,7 +5,6 @@
 #include "misc.h"
 #include <vector>
 #include <thread>
-#include <memory>
 #include <atomic>
 
 // Essentially this class is a threadpool.
@@ -25,9 +24,7 @@ public:
 
 private:
     bool canSpawnThread(unsigned int remainingRequests) const;
-    unsigned int spawnThread(); // always call canSpawnThread before this. Returns the thread id.
-    void threadExec(unsigned int idx,
-                     repoId_t startRepo);
+    void threadExec(repoId_t startRepo);
 
     repoId_t m_nextRepo;
     repoId_t m_endRepo;
@@ -36,8 +33,7 @@ private:
 
 
     std::atomic<unsigned int> m_curThreads;
-    std::vector<std::thread*> m_threads; // some elements may be null due to thread sequencing.
-    std::atomic<bool> m_isFinished; // set to true when reached end of repos OR had major error.
+    std::atomic<bool> m_isFinished; // set to true when reached end of repos
 
 
     static const unsigned int REQUESTS_PER_REPO = 202;      // 100 language requests, 100 date requests, 1 repo request, 1 spare
