@@ -4,6 +4,7 @@
 #include <curlpp/Easy.hpp>
 #include <string>
 #include <memory>
+#include <cstdint>
 
 
 // error handling is incomplete
@@ -13,37 +14,33 @@ public:
     GitCrawler(bool verbose = false);
     ~GitCrawler();
 
-
-
-    // Gets all repos at or after
+    // Gets next 100 repos at or after <since>
     // output is inserted into the stream, not returned.
-    std::stringstream getRepos(unsigned int since);
-
-    // Parses the output from getRepos, returns the id of the last repo parsed (ascending order),
-    // adds the repos to the database
-    // only processes projects where startId <= projectId <= endId
-    unsigned int parseRepos(std::stringstream repos,
-                            unsigned int startId = 0,
-                            unsigned int endId = ~0);
-
+    std::stringstream getRepos(repoId_t since);
 
     // Gets all languages used by the project
     std::stringstream getLanguages(const std::string& owner,
                                    const std::string& project);
 
-    // Parses the output from getLanguages, inserts the languages into the database
-    void parseLanguages(unsigned int projectId,
-                        std::stringstream languages);
-
-
     // Gets the datestamp for a given project
     std::stringstream getDatestamp(const std::string& owner,
                                    const std::string& project);
 
+    // Parses the output from getRepos, returns the id of the last repo parsed (ascending order),
+    // adds the repos to the database
+    // only processes projects where startId <= projectId <= endId
+    unsigned int parseRepos(std::stringstream repos,
+                            repoId_t startId = 0,
+                            repoId_t endId = ~0);
+
+    // Parses the output from getLanguages, inserts the languages into the database
+    void parseLanguages(repoId_t projectId,
+                        std::stringstream languages);
+
     // interprets the data returned from getDatestamp, returns solely the date stamp itself
     // important: note that, unlike parseRepos and parseLanguages, this returns the datestamp
     // while a consistent interface would be preferable, it isnt an option due to table structure within the database
-    std::string parseDatestamp(unsigned int projectId,
+    std::string parseDatestamp(repoId_t projectId,
                                const std::string &repo);
 
 

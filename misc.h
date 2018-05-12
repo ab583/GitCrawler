@@ -2,6 +2,9 @@
 #define MISC_H
 #include <iostream>
 #include <cstdint>
+typedef uint32_t repoId_t; // highest id was approx 97M at last check, so this uses less than 1/40000 the address space
+typedef uint32_t userId_t; // not sure what the highest user id is. should suffice though.
+
 
 static constexpr uint32_t hash32_helper(const char * const str, uint32_t hash){
     // constexpr uint32_t FNV_PRIME = 16777619;
@@ -17,9 +20,6 @@ constexpr uint32_t hash32(const char * const str){
 
 std::string toLower(std::string str);
 bool isDigit(char c);
-
-void fdump(std::istream& input,
-           const std::string& fileName);
 
 void fdump(const std::string& input,
            const std::string& fileName);

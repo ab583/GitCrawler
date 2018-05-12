@@ -35,19 +35,19 @@
 #include "handler.h"
 #include "config.h"
 #include "statistics.h"
+#include "exceptions.h"
+#include "boost/filesystem.hpp"
 #include <iostream>
 #include <cassert>
 #include <fstream>
 #include <sstream>
 #include <cstdlib> // atoi
 #include <unistd.h> // usleep
-#include "tokenizer.h"
-
 
 void printRemainingRequests();
 
 // gets all repos in interval [argv[1], argv[2]], parses them, adds them to the database
-int getParseRepos(int argc, const char* argv[]);
+int getParseRepos(int startRepo, int endRepo);
 
 // calculates the statistics based on data obtained by getParseRepos
 // and inserts them into the database table Statistics.
@@ -56,34 +56,43 @@ int getParseRepos(int argc, const char* argv[]);
 void calculateStatistics(int argc, const char* argv[]);
 
 int main(int argc, const char* argv[]){
-    //getParseRepos(argc, argv);
-
-    Statistics::init();
+    unsigned int verbosity = 2;
+    try {
     Config::readFile("config.txt");
+    } catch (const FileIoError& e){
+        if(verbosity >= 1){
+            std::cout << "Failed to open config file. Creating new one, please enter proper values. " << std::endl;
+        }
+        Config::createConfig();
+        return 1;
+    }
 
-    Statistics::init();
-    calculateStatistics(argc, argv);
+    // create folders if they dont exist
+    boost::filesystem::create_directories("repositories");
+    boost::filesystem::create_directories("languages");
+    boost::filesystem::create_directories("dates");
+
+    // create database if it doesnt exist
+    DatabaseIo db;
+    try {
+        db.createDatabase();
+    } catch(sql::SQLException& e){
+        std::cout << "Error: " << e.what() << std::endl;
+        std::cout << "MySQL error code: " << e.getErrorCode();
+        std::cout << ", SQLState: " << e.getSQLState() << std::endl;
+    }
+
+    // Note: repos start at 1.
+    Handler h(1, 5000, 3, 1);
+    h.begin();
+
+    //  Statistics::init();
+    //  calculateStatistics(argc, argv);
+
+
 
     return 0;
-
 }
-/*
- *
-    void processProjects(unsigned int beginId,
-                         unsigned int endId);
-
-
-    // computes derived statistcs such as functional projects as a percentage of all projects
-    // always call this AFTER reducing instances of this class
-    void computeDerivedStatistics();
-
-
-    // inserts all statistics into db.
-    void insertDb();
-
-    static void reduce(Statistics& dst,
-                       const Statistics& src);
-                       */
 
 void calculateStatistics(int argc, const char *argv[]){
     Statistics s;
@@ -104,19 +113,4 @@ void calculateStatistics(int argc, const char *argv[]){
     //s.insertDb();
 }
 
-
-
-int getParseRepos(int argc, const char* argv[]){
-    assert(sizeof(unsigned int) >= 4); // Must be at least 32 bits to ensure its able to encode any given id
-    if(argc != 3){
-        std::cout << "Error: must pass the starting repo, end repo, and no other parameters at command line. " << std::endl;
-        return 1;
-    }
-
-    Config::readFile("config.txt");
-    Handler h(atoi(argv[1]), atoi(argv[2]), 3, 2);
-    h.begin();
-
-    return 0;
-}
 

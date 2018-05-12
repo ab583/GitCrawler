@@ -17,15 +17,6 @@ bool isDigit(char c){
     return (c >= '0') && (c <= '9');
 }
 
-void fdump(std::istream& input,
-           const std::string& fileName){
-    std::ofstream fout(fileName);
-    if(!fout){
-        throw std::runtime_error("Error opening output file: " + fileName);
-    }
-    // fout << input; // TODO: FIX THIS!
-}
-
 void fdump(const std::string &input,
            const std::string &fileName){
     std::ofstream fout(fileName);

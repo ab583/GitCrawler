@@ -8,7 +8,7 @@
 
 std::vector<std::string> Statistics::m_funcLanguages;
 
-inline long double percent(long double fst, long double snd){
+inline double percent(double fst, double snd){
     if(!snd){
         return 0;
     }
@@ -94,8 +94,8 @@ void Statistics::processProjects(unsigned int beginId,
 
 void Statistics::computeDerivedStatistics(){
     // no make_unique untill C++14
-    m_partFuncProjsPct = std::unique_ptr<vec2d<long double>>(new vec2d<long double>());
-    m_funcProjsPct = std::unique_ptr<vec2d<long double>>(new vec2d<long double>());
+    m_partFuncProjsPct = std::unique_ptr<vec2d<double>>(new vec2d<double>());
+    m_funcProjsPct = std::unique_ptr<vec2d<double>>(new vec2d<double>());
 
     m_partFuncProjsPct->resize(11);
     for(auto it = m_partFuncProjsPct->begin(); it != m_partFuncProjsPct->end(); ++it){
@@ -118,7 +118,7 @@ void Statistics::computeDerivedStatistics(){
 void Statistics::insertDb(){
     std::string date;
     unsigned int projectCount, partFuncProjs, funcProjs;
-    long double partFuncProjsPct, funcProjsPct;
+    double partFuncProjsPct, funcProjsPct;
     // i = year offset, j = month offset
     for(std::size_t i = 0; i < m_projectCounts.size(); ++i){
         for(std::size_t j = 0; j < m_projectCounts[0].size(); ++j){

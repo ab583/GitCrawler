@@ -3,6 +3,7 @@
 #include "exceptions.h"
 #include <fstream>
 #include <stdexcept>
+#include <limits>
 
 std::string Config::m_userAgent = "";
 std::string Config::m_authToken = "";
@@ -32,7 +33,10 @@ void Config::readFile(const std::string& fileName){
     std::string field, val;
 
     while(fin >> field){
-        if(field[0] != '#'){
+        if(field[0] == '#'){
+            // skip til next line
+            fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        } else {
             if(!(fin >> val)){
                 throw BadConfigFile("Malformed config file detected.");
             }

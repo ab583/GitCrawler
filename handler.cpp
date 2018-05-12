@@ -3,8 +3,8 @@
 #include <sstream>
 #include <unistd.h>
 
-Handler::Handler(unsigned int startRepo,
-                 unsigned int endRepo,
+Handler::Handler(repoId_t startRepo,
+                 repoId_t endRepo,
                  unsigned int maxThreads,
                  unsigned int verbosity):
     m_nextRepo(startRepo),
@@ -68,17 +68,15 @@ unsigned int Handler::spawnThread(){
 // todo: implement start/end repo, in parseRepos.
 // probably not necessary, though
 void Handler::threadExec(unsigned int idx,
-                         unsigned int startRepo){
-    GitCrawler gc(m_verbosity >= 1);
-    std::stringstream ss;
+                         repoId_t startRepo){
+    GitCrawler gc(m_verbosity >= 2);
     unsigned int lastRepoParsed;
 
     if(m_verbosity >= 2){
         std::cout << "Beginning to parse repos starting at " << startRepo << ". " << std::endl;
     }
 
-    gc.getRepos(startRepo-1, ss);
-    lastRepoParsed = gc.parseRepos(ss);
+    lastRepoParsed = gc.parseRepos(std::move(gc.getRepos(startRepo-1)));
 
     if(m_verbosity >= 2){
         std::cout << "Finished parsing repos in [" << startRepo << "," << lastRepoParsed << "]. " << std::endl;

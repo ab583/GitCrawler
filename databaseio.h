@@ -1,5 +1,6 @@
 #ifndef DATABASEIO_H
 #define DATABASEIO_H
+#include "misc.h"
 #include "mysql_connection.h"
 #include "mysql_driver.h"
 #include "cppconn/statement.h"
@@ -19,25 +20,27 @@ public:
     DatabaseIo();
     ~DatabaseIo();
 
+    void createDatabase();
+
     bool selectDatabase(const std::string& database);
 
     // returns true on any error
-    bool insertProject(unsigned int id,
-                        unsigned int owner_id,
-                        time_t timestamp,
-                        const std::string& project_name,
-                        const std::string& owner_name);
+    bool insertProject(repoId_t repoId,
+                       userId_t ownerId,
+                       time_t timestamp,
+                       const std::string& projectName,
+                       const std::string& ownerName);
 
     // returns true on any error
-    bool insertLanguage(unsigned int id,
-                         const std::string& language,
-                         unsigned int bytes);
+    bool insertLanguage(repoId_t repoId,
+                        const std::string& language,
+                        uint32_t bytes); // its seriously unlikely the code will be >4GB
 
 
-    bool projectExists(unsigned int projectId,
+    bool projectExists(repoId_t repoId,
                        const std::string& table);
 
-    void deleteProject(unsigned int projectId); // deletes languages as well. fails silently.
+    void deleteProject(repoId_t repoId); // deletes languages as well. fails silently.
 
     // Catches any exceptions, simply returns true if the statement failed.
     bool execute(const std::string& statement);
@@ -53,8 +56,8 @@ public:
                           unsigned int projectCount,
                           unsigned int partFuncProjs,
                           unsigned int funcProjs,
-                          long double partFuncProjsPct,
-                          long double funcProjsPct);
+                          double partFuncProjsPct,
+                          double funcProjsPct);
 
 
 private:

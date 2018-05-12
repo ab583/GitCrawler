@@ -5,6 +5,7 @@
 #include <sstream>
 #include <memory>
 #include <iomanip>
+#include <iostream>
 
 DatabaseIo::DatabaseIo(){
     m_driver = sql::mysql::get_driver_instance();
@@ -18,6 +19,48 @@ DatabaseIo::DatabaseIo(){
 DatabaseIo::~DatabaseIo(){
 }
 
+void DatabaseIo::createDatabase(){
+    std::string createDatabase = "CREATE DATABASE IF NOT EXISTS " + Config::dbName() + ";";
+
+    std::string createProjects =
+            "CREATE TABLE IF NOT EXISTS Projects ("
+            "ProjectId INT UNSIGNED NOT NULL,"
+            "OwnerId INT UNSIGNED NOT NULL,"
+            "Timestamp INT UNSIGNED NOT NULL,"
+            "ProjectName VARCHAR(255) NOT NULL,"
+            "OwnerName VARCHAR(255) NOT NULL,"
+            "PRIMARY KEY (ProjectId)"
+            "); ";
+
+    std::string createLanguages =
+            "CREATE TABLE IF NOT EXISTS Languages ("
+            "ProjectId INT UNSIGNED NOT NULL,"
+            "Language VARCHAR(255) NOT NULL,"
+            "Bytes INT UNSIGNED NOT NULL,"
+            "FOREIGN KEY (ProjectId) REFERENCES Projects(ProjectId)"
+            "); ";
+
+    // TODO: statistics table
+
+    try {
+        executeQuery(createDatabase);
+    } catch(...){
+        std::cout << "WARNING: Database \"" << Config::dbName() << "\" already exists." << std::endl;
+    }
+
+    try {
+        executeQuery(createProjects);
+    } catch(...){
+        std::cout << "WARNING: Table \"Projects\" already exists." << std::endl;
+    }
+
+    try {
+        executeQuery(createLanguages);
+    } catch(...){
+        std::cout << "WARNING: Table \"Languages\" already exists." << std::endl;
+    }
+}
+
 bool DatabaseIo::selectDatabase(const std::string& database){
     try {
         return m_stmt->execute("USE " + database);
@@ -28,28 +71,28 @@ bool DatabaseIo::selectDatabase(const std::string& database){
 
 
 // returns true on any error
-bool DatabaseIo::insertProject(unsigned int id,
-                               unsigned int owner_id,
+bool DatabaseIo::insertProject(repoId_t repoId,
+                               userId_t ownerId,
                                time_t timestamp,
-                               const std::string& project_name,
-                               const std::string& owner_name){
+                               const std::string& projectName,
+                               const std::string& ownerName){
     std::stringstream ss;
     ss << "INSERT INTO Projects VALUES(" <<
-          id << ", " <<
-          owner_id << ", " <<
+          repoId << ", " <<
+          ownerId << ", " <<
           timestamp << ", \"" <<
-          project_name << "\", \"" <<
-          owner_name << "\")";
+          projectName << "\", \"" <<
+          ownerName << "\")";
     return execute(ss.str().c_str());
 }
 
 // returns true on any error
-bool DatabaseIo::insertLanguage(unsigned int id,
+bool DatabaseIo::insertLanguage(repoId_t repoId,
                                 const std::string& language,
-                                unsigned int bytes){
+                                uint32_t bytes){
     std::stringstream ss;
     ss << "INSERT INTO Languages VALUES(";
-    ss << id << ", \"";
+    ss << repoId << ", \"";
     ss << language << "\", ";
     ss << bytes << ")";
     return execute(ss.str().c_str());
@@ -64,11 +107,11 @@ bool DatabaseIo::execute(const std::string& statement){
 }
 
 
-bool DatabaseIo::projectExists(unsigned int projectId,
+bool DatabaseIo::projectExists(repoId_t repoId,
                                const std::string& table){
     std::stringstream ss;
     try {
-        ss << "SELECT ProjectId from " << table << " where ProjectId=" << projectId;
+        ss << "SELECT ProjectId from " << table << " where ProjectId=" << repoId;
         sql::ResultSet* res = m_stmt->executeQuery(ss.str());
         return res->next();
     } catch(...){
@@ -76,9 +119,9 @@ bool DatabaseIo::projectExists(unsigned int projectId,
     }
 }
 
-void DatabaseIo::deleteProject(unsigned int projectId){
-    execute("delete from Languages where ProjectId=" + std::to_string(projectId));
-    execute("delete from Projects where ProjectId=" + std::to_string(projectId));
+void DatabaseIo::deleteProject(repoId_t repoId){
+    execute("delete from Languages where ProjectId=" + std::to_string(repoId));
+    execute("delete from Projects where ProjectId=" + std::to_string(repoId));
 }
 
 DatabaseIo::queryResult_t DatabaseIo::executeQuery(const std::string& query){
@@ -99,8 +142,8 @@ bool DatabaseIo::insertStatistics(const std::string& date,
                                   unsigned int projectCount,
                                   unsigned int partFuncProjs,
                                   unsigned int funcProjs,
-                                  long double partFuncProjsPct,
-                                  long double funcProjsPct){
+                                  double partFuncProjsPct,
+                                  double funcProjsPct){
     std::stringstream ss;
     ss << std::setprecision(20); // probably overkill. let the user truncate at their discretion
 
@@ -114,4 +157,6 @@ bool DatabaseIo::insertStatistics(const std::string& date,
 
     return execute(ss.str());
 }
+
+
 

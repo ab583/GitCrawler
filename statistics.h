@@ -63,11 +63,11 @@ private:
 
     // partially functional projects as a percentage of all projects per month
     // only computed by calling computeDerivedStatistics()
-    std::unique_ptr<vec2d<long double>> m_partFuncProjsPct;
+    std::unique_ptr<vec2d<double>> m_partFuncProjsPct;
 
     // fully functional projects as a percentage of all projects per month
     // only computed by calling computeDerivedStatistics()
-    std::unique_ptr<vec2d<long double>> m_funcProjsPct;
+    std::unique_ptr<vec2d<double>> m_funcProjsPct;
 
     // static std::vector<std::string> m_languages;
     static std::vector<std::string> m_funcLanguages;

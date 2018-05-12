@@ -28,18 +28,18 @@ GitCrawler::GitCrawler(bool verbose):
 GitCrawler::~GitCrawler(){
 }
 
-std::stringstream GitCrawler::getRepos(unsigned int since){
+std::stringstream GitCrawler::getRepos(repoId_t since){
     std::string urlStr("https://api.github.com/repositories?since=");
     urlStr += std::to_string(since);
 
     std::stringstream ss = makeRequest(urlStr);
 
-    fdump(ss.str(), "./repos/" + std::to_string(since));
+    fdump(ss.str(), "./repositories/" + std::to_string(since));
     return ss;
 }
 
 std::stringstream GitCrawler::getLanguages(const std::string& owner,
-                              const std::string& project){
+                                           const std::string& project){
     // setup the url
     // https://api.github.com/repos/$OWNER/$PROJECT/languages
     std::stringstream request;
@@ -48,7 +48,7 @@ std::stringstream GitCrawler::getLanguages(const std::string& owner,
 }
 
 std::stringstream GitCrawler::getDatestamp(const std::string& owner,
-                              const std::string& project){
+                                           const std::string& project){
     // setup the url
     // https://api.github.com/repos/$OWNER/$PROJECT
     std::stringstream ss;
@@ -87,8 +87,8 @@ time_t GitCrawler::extractResetTime(const std::string& request){
 }
 
 unsigned int GitCrawler::parseRepos(std::stringstream repos,
-                                    unsigned int startId,
-                                    unsigned int endId){
+                                    repoId_t startId,
+                                    repoId_t endId){
 
     size_t idx = 0, lastProjectId = ~0;
 
@@ -107,7 +107,7 @@ unsigned int GitCrawler::parseRepos(std::stringstream repos,
     if(repostr.find("collaborator", 0) == std::string::npos){
         // collaborator was chosen because its highly unlikely to be present in any non-standard response (e.g. errors, rate limit exceeded, etc)
         std::string fname = reposDumpName + std::to_string(time(NULL));
-        fdump(repos, fname);
+        fdump(repos.str(), fname);
         throw std::runtime_error("Failed to parse repos. Dumping contents to file: " + fname);
     }
     while((idx = repostr.find("\"id\"", idx)) != std::string::npos){
@@ -185,7 +185,7 @@ unsigned int GitCrawler::parseRepos(std::stringstream repos,
     return lastProjectId;
 }
 
-void GitCrawler::parseLanguages(unsigned int projectId,
+void GitCrawler::parseLanguages(repoId_t projectId,
                                 std::stringstream languages){
     // final language does not have a delimiting comma. instead, just keep checking until finding a non-digit
     size_t idx = 0, bytes;
@@ -259,7 +259,7 @@ void GitCrawler::parseLanguages(unsigned int projectId,
 }
 
 
-std::string GitCrawler::parseDatestamp(unsigned int projectId,
+std::string GitCrawler::parseDatestamp(repoId_t projectId,
                                        const std::string& repo){
     std::string datestamp;
     fdump(repo, "./dates/" + std::to_string(projectId));
@@ -307,7 +307,7 @@ time_t GitCrawler::dateToTimestamp(const std::string& str){
     return mktime(&t);
 }
 
-    /*
+/*
     char cstr[str.length()+1], delimiters[] = "-:+TZ";
     char* savePtr = cstr;
     strcpy(cstr, str.c_str());
@@ -322,7 +322,7 @@ time_t GitCrawler::dateToTimestamp(const std::string& str){
     t.tm_isdst = -1; // unsure if GMT uses DST.
     */
 
-    /*
+/*
     Tokenizer tok(str, "-:+TZ");
 
     // Let the errors caused by tokenizer propagate, assuming the datestamp is invalid
@@ -335,7 +335,7 @@ time_t GitCrawler::dateToTimestamp(const std::string& str){
     t.tm_isdst = -1; // unsure if GMT uses DST.
     */
 
-   // return mktime(&t);
+// return mktime(&t);
 
 std::stringstream GitCrawler::makeRequest(const std::string& urlStr){
     // no point in recreating this string every call, unless we allow reading a new config file
