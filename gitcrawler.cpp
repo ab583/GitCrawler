@@ -11,7 +11,7 @@
 #include <cstring>
 #include <sstream>
 #include <iostream>
-#include <iomanip> // std::get_time
+#include <iomanip>
 
 // Note that these WILL cause collisions if old files arent removed.
 // If time allows, use more defensive programming.
@@ -28,41 +28,36 @@ GitCrawler::GitCrawler(bool verbose):
 GitCrawler::~GitCrawler(){
 }
 
-void GitCrawler::getRepos(unsigned int since,
-                          std::ostream &output){
+std::stringstream GitCrawler::getRepos(unsigned int since){
     std::string urlStr("https://api.github.com/repositories?since=");
     urlStr += std::to_string(since);
 
-    std::stringstream ss;
-    makeRequest(urlStr, ss);
+    std::stringstream ss = makeRequest(urlStr);
 
     fdump(ss.str(), "./repos/" + std::to_string(since));
-
-    output << ss.rdbuf();
+    return ss;
 }
 
-void GitCrawler::getLanguages(const std::string& owner,
-                              const std::string& project,
-                              std::ostream &output){
+std::stringstream GitCrawler::getLanguages(const std::string& owner,
+                              const std::string& project){
     // setup the url
     // https://api.github.com/repos/$OWNER/$PROJECT/languages
-    std::stringstream ss;
-    ss << "https://api.github.com/repos/" << owner << "/" << project << "/languages";
-    makeRequest(ss.str(), output);
+    std::stringstream request;
+    request << "https://api.github.com/repos/" << owner << "/" << project << "/languages";
+    return makeRequest(request.str());
 }
 
-void GitCrawler::getDatestamp(const std::string& owner,
-                              const std::string& project,
-                              std::ostream& output){
+std::stringstream GitCrawler::getDatestamp(const std::string& owner,
+                              const std::string& project){
     // setup the url
     // https://api.github.com/repos/$OWNER/$PROJECT
     std::stringstream ss;
     ss << "https://api.github.com/repos/" << owner << "/" << project;
-    makeRequest(ss.str(), output);
+    return makeRequest(ss.str());
 }
 
-void GitCrawler::getRateLimit(std::ostream& output){
-    makeRequest("https://api.github.com/rate_limit", output);
+std::stringstream GitCrawler::getRateLimit(){
+    return makeRequest("https://api.github.com/rate_limit");
 }
 
 unsigned int GitCrawler::extractRemainingRequests(const std::string& request){
@@ -91,7 +86,7 @@ time_t GitCrawler::extractResetTime(const std::string& request){
     return extractDigits(request, findDigit(request, idx));
 }
 
-unsigned int GitCrawler::parseRepos(std::stringstream& repos,
+unsigned int GitCrawler::parseRepos(std::stringstream repos,
                                     unsigned int startId,
                                     unsigned int endId){
 
@@ -171,7 +166,7 @@ unsigned int GitCrawler::parseRepos(std::stringstream& repos,
                 }
             } else {
                 // need to get datestamp now
-                getDatestamp(ownerName, projectName, datesStream);
+                datesStream = getDatestamp(ownerName, projectName);
                 datestamp = datesStream.str();
                 timestamp = dateToTimestamp(parseDatestamp(projectId, datestamp));
 
@@ -181,8 +176,8 @@ unsigned int GitCrawler::parseRepos(std::stringstream& repos,
                               << ownerName << "/" << projectName << std::endl;
                 }
                 m_db.insertProject(projectId, ownerId, timestamp, projectName, ownerName);
-                getLanguages(ownerName, projectName, languagesStream);
-                parseLanguages(projectId, languagesStream);
+                languagesStream = getLanguages(ownerName, projectName);
+                parseLanguages(projectId, std::move(languagesStream));
             }
         }
     }
@@ -191,7 +186,7 @@ unsigned int GitCrawler::parseRepos(std::stringstream& repos,
 }
 
 void GitCrawler::parseLanguages(unsigned int projectId,
-                                std::stringstream& languages){
+                                std::stringstream languages){
     // final language does not have a delimiting comma. instead, just keep checking until finding a non-digit
     size_t idx = 0, bytes;
 
@@ -286,16 +281,12 @@ std::string GitCrawler::parseDatestamp(unsigned int projectId,
 }
 
 unsigned int GitCrawler::getRemainingRequests(){
-    std::stringstream rateLimit;
-    getRateLimit(rateLimit);
-    std::string rateLimitStr = rateLimit.str();
-    return extractRemainingRequests(rateLimitStr);
+    return extractRemainingRequests(getRateLimit().str());
 }
 
 void GitCrawler::getRates(unsigned int& remainingRequests,
                           time_t& resetTime){
-    std::stringstream rateLimit;
-    getRateLimit(rateLimit);
+    std::stringstream rateLimit = getRateLimit();
     std::string rateLimitStr = rateLimit.str();
     remainingRequests = extractRemainingRequests(rateLimitStr);
     resetTime = extractResetTime(rateLimitStr);
@@ -346,15 +337,16 @@ time_t GitCrawler::dateToTimestamp(const std::string& str){
 
    // return mktime(&t);
 
-void GitCrawler::makeRequest(const std::string& urlStr, std::ostream& output){
+std::stringstream GitCrawler::makeRequest(const std::string& urlStr){
     // no point in recreating this string every call, unless we allow reading a new config file
     const static std::string userAgentStr = "User-Agent: " + Config::userAgent();
     const static std::string authTokenStr = "Authorization: token " + Config::authToken();
+    std::stringstream result;
 
     curlpp::Cleanup cleaner;
     curlpp::Easy request;
     curlpp::options::Url url(urlStr);
-    curlpp::options::WriteStream ws(&output);
+    curlpp::options::WriteStream ws(&result);
 
     // setup the header
     std::list<std::string> header;
@@ -369,4 +361,6 @@ void GitCrawler::makeRequest(const std::string& urlStr, std::ostream& output){
 
 
     request.perform();
+
+    return result;
 }
