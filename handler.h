@@ -6,6 +6,7 @@
 #include <vector>
 #include <thread>
 #include <memory>
+#include <atomic>
 
 // Essentially this class is a threadpool.
 // Note: each thread uses approx. 60kBit/s down, 10kBit/s up
@@ -34,9 +35,9 @@ private:
     unsigned int m_verbosity; // [0,2] valid options. >2 has same effect as 2. higher = more printing messages
 
 
-    unsigned int m_curThreads;
+    std::atomic<unsigned int> m_curThreads;
     std::vector<std::thread*> m_threads; // some elements may be null due to thread sequencing.
-    bool m_isFinished; // set to true when reached end of repos OR had major error.
+    std::atomic<bool> m_isFinished; // set to true when reached end of repos OR had major error.
 
 
     static const unsigned int REQUESTS_PER_REPO = 202;      // 100 language requests, 100 date requests, 1 repo request, 1 spare

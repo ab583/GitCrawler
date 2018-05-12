@@ -27,19 +27,27 @@ void Handler::setNextRepo(unsigned int nextRepo){
 void Handler::begin(){
     unsigned int remainingRequests, threadIdx;
     while(!m_isFinished){
+        std::cout << "test1" << std::endl;
         remainingRequests = GitCrawler::getRemainingRequests();
+        std::cout << "Remaining requests: " << remainingRequests << std::endl;
         if(!canSpawnThread(remainingRequests)){
-            if(m_verbosity >= 2){
+            if(m_verbosity >= 1){
                 std::cout << "Unable to spawn more threads. Going back to sleep. " << std::endl;
             }
             sleep(SLEEP_INTERVAL);
         } else {
+            std::cout << "test2" << std::endl;
             while(canSpawnThread(remainingRequests)){
+                std::cout << "spawning thread..." << std::endl;
                 threadIdx = spawnThread();
+                std::cout << "thread spawned, id: " << threadIdx << std::endl;
                 if(m_nextRepo >= m_endRepo){
+                    std::cout << "joining. " << std::endl;
+                    std::cout << "thread joinable? " << m_threads[threadIdx]->joinable() << std::endl;
                     m_threads[threadIdx]->join();
                     return;
                 } else {
+                    std::cout << "detaching. " << std::endl;
                     m_threads[threadIdx]->detach();
                 }
             }
@@ -60,8 +68,8 @@ unsigned int Handler::spawnThread(){
         idx++;
     }
     m_curThreads++;
-    m_threads[idx] = new std::thread(&Handler::threadExec, this, idx, m_nextRepo);
     m_nextRepo += SKIP_COUNT;
+    m_threads[idx] = new std::thread(&Handler::threadExec, this, idx, m_nextRepo - SKIP_COUNT);
     return idx;
 }
 
@@ -69,16 +77,17 @@ unsigned int Handler::spawnThread(){
 // probably not necessary, though
 void Handler::threadExec(unsigned int idx,
                          repoId_t startRepo){
+    std::cout << "new thread executing, idx = " << idx << ", repo = " << startRepo << std::endl;
     GitCrawler gc(m_verbosity >= 2);
     unsigned int lastRepoParsed;
 
-    if(m_verbosity >= 2){
+    if(m_verbosity >= 1){
         std::cout << "Beginning to parse repos starting at " << startRepo << ". " << std::endl;
     }
 
     lastRepoParsed = gc.parseRepos(std::move(gc.getRepos(startRepo-1)));
 
-    if(m_verbosity >= 2){
+    if(m_verbosity >= 1){
         std::cout << "Finished parsing repos in [" << startRepo << "," << lastRepoParsed << "]. " << std::endl;
     }
 
