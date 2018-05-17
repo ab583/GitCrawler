@@ -11,4 +11,3 @@ class BadConfigFile : public std::runtime_error {
 };
 
 #endif // EXCEPTIONS
-

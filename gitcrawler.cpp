@@ -175,13 +175,15 @@ repoId_t GitCrawler::parseRepos(std::stringstream repos,
                     std::cout << "Inserting project: " << projectId << ", " << ownerId << ", " << timestamp << ", "
                               << ownerName << "/" << projectName << std::endl;
                 }
-                m_db.insertProject(projectId, ownerId, timestamp, projectName, ownerName);
+                m_db.addProject(projectId, ownerId, timestamp, projectName, ownerName);
                 languagesStream = getLanguages(ownerName, projectName);
                 parseLanguages(projectId, std::move(languagesStream));
             }
         }
     }
 
+    m_db.commitProjects();
+    m_db.commitLanguages();
     return lastProjectId;
 }
 
@@ -195,7 +197,7 @@ void GitCrawler::parseLanguages(repoId_t projectId,
 
     if( (idx = languagesStr.find("message", 0)) != std::string::npos){
         // if we found this, its not a standard response. some kind of error, like "repo blocked".
-        // just add it to the table and icnlude the reason. can exclude it in data analysis
+        // just add it to the table and include the reason. can exclude it in data analysis
         idx = languagesStr.find(":", idx);
         idx = 1 + languagesStr.find("\"", idx);
         std::string msg("");
@@ -207,7 +209,7 @@ void GitCrawler::parseLanguages(repoId_t projectId,
         if(m_verbose){
             std::cout << "Nonstandard languages response: " << msg << std::endl;
         }
-        m_db.insertLanguage(projectId, msg, 0);
+        m_db.addLanguage(projectId, msg, 0);
         return;
     }
 
@@ -248,7 +250,7 @@ void GitCrawler::parseLanguages(repoId_t projectId,
         fdump(languagesStr, "./languages/" + std::to_string(projectId));
         
         // got the byte count. insert it
-        m_db.insertLanguage(projectId, lang, bytes);
+        m_db.addLanguage(projectId, lang, bytes);
 
         if(languagesStr.find(",", idx) == std::string::npos){
             return;

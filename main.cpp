@@ -37,12 +37,14 @@
 #include "statistics.h"
 #include "exceptions.h"
 #include "boost/filesystem.hpp"
+#include "mainwindow.h"
 #include <iostream>
 #include <cassert>
 #include <fstream>
 #include <sstream>
 #include <cstdlib> // atoi
 #include <unistd.h> // usleep
+#include <QApplication>
 
 void printRemainingRequests();
 
@@ -55,7 +57,28 @@ int getParseRepos(int startRepo, int endRepo);
 // threads not currently implemented, but statistics class is already thread-safe
 void calculateStatistics(int argc, const char* argv[]);
 
+//
+/*
+
+int main(int argc, char *argv[])
+{
+
+    return a.exec();
+}
+*/
+
+
 int main(int argc, const char* argv[]){
+    Config::readFile();
+    DatabaseIo db;
+
+
+
+    /*
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+
     unsigned int verbosity = 2;
     try {
     Config::readFile("config.txt");
@@ -82,7 +105,7 @@ int main(int argc, const char* argv[]){
 
     //  Statistics::init();
     //  calculateStatistics(argc, argv);
-
+    */
 
 
     return 0;

@@ -8,12 +8,12 @@
 #include <string>
 #include <memory>
 #include <cstdint>
-
+#include <sstream>
 
 // Note: prepared statements are causing a MethodNotImplementedException.
 // Until mysql_cppconnector is updated, will have to prepare them here
-class DatabaseIo
-{
+// created a new instance for each thread!
+class DatabaseIo {
 public:
     typedef std::shared_ptr<sql::ResultSet> queryResult_t;
 
@@ -24,18 +24,23 @@ public:
 
     bool selectDatabase(const std::string& database);
 
-    // returns true on any error
-    bool insertProject(repoId_t repoId,
-                       userId_t ownerId,
-                       time_t timestamp,
-                       const std::string& projectName,
-                       const std::string& ownerName);
+    // adds the project values to a batch job
+    void addProject(repoId_t repoId,
+                    userId_t ownerId,
+                    time_t timestamp,
+                    const std::string& projectName,
+                    const std::string& ownerName);
 
-    // returns true on any error
-    bool insertLanguage(repoId_t repoId,
-                        const std::string& language,
-                        uint32_t bytes); // its seriously unlikely the code will be >4GB
+    // commits all queued projects in batch job
+    bool commitProjects();
 
+    // adds the language values to a batch job
+    void addLanguage(repoId_t repoId,
+                     const std::string& language,
+                     uint32_t bytes); // its seriously unlikely the code will be >4GB
+
+    // commits all queued languages in batch job
+    bool commitLanguages();
 
     bool projectExists(repoId_t repoId,
                        const std::string& table);
@@ -45,8 +50,6 @@ public:
     // Catches any exceptions, simply returns true if the statement failed.
     bool execute(const std::string& statement);
 
-    // Technically this should be a unique ptr, but that introduces issues with returning it
-    // I think it can be remedied with std::move, check this later.
     queryResult_t executeQuery(const std::string& query);
 
     std::uint64_t getUniqueLanguagesCount();
@@ -63,7 +66,9 @@ public:
 private:
     sql::mysql::MySQL_Driver* m_driver; // doesnt take ownership, raw is fine
     std::shared_ptr<sql::Connection> m_con;
-    std::shared_ptr<sql::Statement> m_stmt;
+    std::shared_ptr<sql::Statement> m_stmt;    
+    std::unique_ptr<std::stringstream> m_projectsBatch;
+    std::unique_ptr<std::stringstream> m_languagesBatch;
 
     // DB conns are not move or copy constructible.
     DatabaseIo(const DatabaseIo& src) = delete;

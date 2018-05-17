@@ -7,7 +7,10 @@
 #include <iomanip>
 #include <iostream>
 
-DatabaseIo::DatabaseIo(){
+DatabaseIo::DatabaseIo():
+    m_projectsBatch(nullptr),
+    m_languagesBatch(nullptr){
+
     m_driver = sql::mysql::get_driver_instance();
     std::stringstream ss;
     ss << "tcp://" << Config::dbHost() << ":" << Config::dbPort();
@@ -69,33 +72,58 @@ bool DatabaseIo::selectDatabase(const std::string& database){
     }
 }
 
-
-// returns true on any error
-bool DatabaseIo::insertProject(repoId_t repoId,
-                               userId_t ownerId,
-                               time_t timestamp,
-                               const std::string& projectName,
-                               const std::string& ownerName){
-    std::stringstream ss;
-    ss << "INSERT INTO Projects VALUES(" <<
-          repoId << ", " <<
-          ownerId << ", " <<
-          timestamp << ", \"" <<
-          projectName << "\", \"" <<
-          ownerName << "\")";
-    return execute(ss.str().c_str());
+void DatabaseIo::addProject(repoId_t repoId,
+                            userId_t ownerId,
+                            time_t timestamp,
+                            const std::string& projectName,
+                            const std::string& ownerName){
+    if(!m_projectsBatch){
+        m_projectsBatch = std::unique_ptr<std::stringstream>(new std::stringstream());
+        (*m_projectsBatch) << "INSERT INTO Projects VALUES ("
+                           << repoId << ", "
+                           << ownerId << ", "
+                           << timestamp << ", "
+                           << "\"" << projectName << "\", "
+                           << "\"" << ownerName << "\")";
+    } else {
+        (*m_projectsBatch) << ", ("
+                           << repoId << ", "
+                           << ownerId << ", "
+                           << timestamp << ", "
+                           << "\"" << projectName << "\", "
+                           << "\"" << ownerName << "\")";
+    }
 }
 
-// returns true on any error
-bool DatabaseIo::insertLanguage(repoId_t repoId,
-                                const std::string& language,
-                                uint32_t bytes){
-    std::stringstream ss;
-    ss << "INSERT INTO Languages VALUES(";
-    ss << repoId << ", \"";
-    ss << language << "\", ";
-    ss << bytes << ")";
-    return execute(ss.str().c_str());
+bool DatabaseIo::commitProjects(){
+    (*m_projectsBatch) << ";";
+    bool result = execute(m_projectsBatch->str().c_str());
+    m_projectsBatch = nullptr;
+    return result;
+}
+
+void DatabaseIo::addLanguage(repoId_t repoId,
+                             const std::string& language,
+                             uint32_t bytes){
+    if(!m_languagesBatch){
+        m_languagesBatch = std::unique_ptr<std::stringstream>(new std::stringstream());
+        (*m_languagesBatch) << "INSERT INTO Languages VALUES ("
+                            << repoId << ", "
+                            << "\"" << language << "\", "
+                            << bytes << ")";
+    } else {
+        (*m_languagesBatch) << ", ("
+                            << repoId << ", "
+                            << "\"" << language << "\", "
+                            << bytes << ")";
+    }
+}
+
+bool DatabaseIo::commitLanguages(){
+    (*m_languagesBatch) << ";";
+    bool result = execute(m_languagesBatch->str().c_str());
+    m_languagesBatch = nullptr;
+    return result;
 }
 
 bool DatabaseIo::execute(const std::string& statement){
