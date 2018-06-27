@@ -14,8 +14,8 @@ DatabaseIo::DatabaseIo():
     m_driver = sql::mysql::get_driver_instance();
     std::stringstream ss;
     ss << "tcp://" << Config::dbHost() << ":" << Config::dbPort();
-    m_con = std::shared_ptr<sql::Connection>(m_driver->connect(ss.str().c_str(), Config::dbUser(), Config::dbPass()));
-    m_stmt = std::shared_ptr<sql::Statement>(m_con->createStatement());
+    m_con = std::unique_ptr<sql::Connection>(m_driver->connect(ss.str().c_str(), Config::dbUser(), Config::dbPass()));
+    m_stmt = std::unique_ptr<sql::Statement>(m_con->createStatement());
     selectDatabase(Config::dbName());
 }
 

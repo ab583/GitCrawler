@@ -1,6 +1,5 @@
 #include "config.h"
 #include "misc.h"
-#include "exceptions.h"
 #include <fstream>
 #include <stdexcept>
 #include <limits>
@@ -22,23 +21,19 @@ constexpr const char * const dbPassField = "DatabasePassword:";
 constexpr const char * const dbNameField = "DatabaseName:";
 
 void Config::readFile(const std::string& fileName){
-    std::ifstream fin(fileName.c_str());
-
-    if(!fin){
-        // strictly speaking it could fail for other reasons
-        // lets keep it simple for now
-        throw FileIoError("Unable to open config file: " + fileName);
-    }
+    std::ifstream fin;
+    fin.open(fileName.c_str());
 
     std::string field, val;
 
     while(fin >> field){
         if(field[0] == '#'){
-            // skip til next line
+            // comment line. ignore it.
             fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         } else {
-            if(!(fin >> val)){
-                throw BadConfigFile("Malformed config file detected.");
+            // a valid line should have exactly two whitespace delimited tokens.
+            if( !(fin >> val) ){
+                throw std::runtime_error("Malformed config file detected.");
             }
             switch(hash32(field.c_str())){
             case hash32(userAgentField):
@@ -63,18 +58,16 @@ void Config::readFile(const std::string& fileName){
                 m_dbName = val;
                 break;
             default:
-                throw BadConfigFile("Unexpected field found in config file: " + field);
-                break;
+                throw std::runtime_error("Unexpected field found in config file: " + field);
             }
         }
     }
 }
 
 void Config::createConfig(){
-    std::ofstream fout("config.txt");
-    if(!fout){
-        throw FileIoError("Failed to create config file!");
-    }
+    std::ofstream fout;
+
+    fout.open("config.txt");
 
     fout << "# This is an example of a config file. \n";
     fout << "# All lines should be blank, start with a '#', or specify a config parameter. \n";
@@ -106,58 +99,29 @@ void Config::createConfig(){
 }
 
 const std::string& Config::userAgent(){
-    if(m_userAgent == ""){
-        throw std::logic_error("Error: requested uninitialized configuration variable, User-Agent.");
-    }
-
     return m_userAgent;
 }
 
 const std::string& Config::authToken(){
-    if(m_authToken == ""){
-        throw std::logic_error("Error: requested uninitialized configuration variable, Auth Token.");
-    }
-
     return m_authToken;
 }
 
 const std::string& Config::dbHost(){
-    if(m_dbHost == ""){
-        throw std::logic_error("Error: requested uninitialized configuration variable, database host.");
-    }
-
     return m_dbHost;
 }
 
 const std::string& Config::dbPort(){
-    if(m_dbPort == ""){
-        throw std::logic_error("Error: requested uninitialized configuration variable, database port.");
-    }
-
     return m_dbPort;
 }
 
 const std::string& Config::dbUser(){
-    if(m_dbUser == ""){
-        throw std::logic_error("Error: requested uninitialized configuration variable, database user.");
-    }
-
     return m_dbUser;
 }
 
 const std::string& Config::dbPass(){
-    if(m_dbPass == ""){
-        throw std::logic_error("Error: requested uninitialized configuration variable, database pass.");
-    }
-
     return m_dbPass;
-
 }
 
 const std::string& Config::dbName(){
-    if(m_dbName == ""){
-        throw std::logic_error("Error: requested uninitialized configuration variable, database name.");
-    }
-
     return m_dbName;
 }

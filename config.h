@@ -7,8 +7,9 @@ class Config
 {
 public:
     static void readFile(const std::string& fileName = "config.txt");
-    static void createConfig(); // creates an empty config file
+    static void createConfig(); // creates an empty config file. throws std::ifstream::failure, on failure
 
+    // returns empty string if no config read.
     static const std::string& userAgent();
     static const std::string& authToken();
     static const std::string& dbHost();
@@ -16,7 +17,6 @@ public:
     static const std::string& dbUser();
     static const std::string& dbPass();
     static const std::string& dbName();
-
 
 private:
     static std::string m_userAgent;
@@ -26,7 +26,6 @@ private:
     static std::string m_dbUser;
     static std::string m_dbPass;
     static std::string m_dbName;
-
 
     Config() = delete;
 };

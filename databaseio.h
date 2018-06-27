@@ -12,7 +12,6 @@
 
 // Note: prepared statements are causing a MethodNotImplementedException.
 // Until mysql_cppconnector is updated, will have to prepare them here
-// created a new instance for each thread!
 class DatabaseIo {
 public:
     typedef std::shared_ptr<sql::ResultSet> queryResult_t;
@@ -37,7 +36,7 @@ public:
     // adds the language values to a batch job
     void addLanguage(repoId_t repoId,
                      const std::string& language,
-                     uint32_t bytes); // its seriously unlikely the code will be >4GB
+                     uint32_t bytes); // its seriously unlikely any given language is going to have >4GB of source. would require tens of millions (very conservative estimate) to billions of LOC
 
     // commits all queued languages in batch job
     bool commitLanguages();
@@ -49,6 +48,7 @@ public:
 
     // Catches any exceptions, simply returns true if the statement failed.
     bool execute(const std::string& statement);
+
 
     queryResult_t executeQuery(const std::string& query);
 
@@ -65,8 +65,8 @@ public:
 
 private:
     sql::mysql::MySQL_Driver* m_driver; // doesnt take ownership, raw is fine
-    std::shared_ptr<sql::Connection> m_con;
-    std::shared_ptr<sql::Statement> m_stmt;    
+    std::unique_ptr<sql::Connection> m_con;
+    std::unique_ptr<sql::Statement> m_stmt;
     std::unique_ptr<std::stringstream> m_projectsBatch;
     std::unique_ptr<std::stringstream> m_languagesBatch;
 

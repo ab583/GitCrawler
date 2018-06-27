@@ -97,7 +97,7 @@ repoId_t GitCrawler::parseRepos(std::stringstream repos,
     std::string projectName, ownerName, repostr = repos.str(), datestamp;
     ownerName.reserve(20);
     projectName.reserve(20);
-    std::stringstream languagesStream, datesStream;
+    std::stringstream datesStream;
 
     if(repostr.find("[]") != std::string::npos){
         // gone past the end of the repos. done processing.
@@ -115,8 +115,6 @@ repoId_t GitCrawler::parseRepos(std::stringstream repos,
         projectId = 0;
         ownerName = "";
         projectName = "";
-        languagesStream.str(std::string());
-        languagesStream.clear();
         datesStream.str(std::string());
         datesStream.clear();
 
@@ -176,8 +174,7 @@ repoId_t GitCrawler::parseRepos(std::stringstream repos,
                               << ownerName << "/" << projectName << std::endl;
                 }
                 m_db.addProject(projectId, ownerId, timestamp, projectName, ownerName);
-                languagesStream = getLanguages(ownerName, projectName);
-                parseLanguages(projectId, std::move(languagesStream));
+                parseLanguages(projectId, std::move(getLanguages(ownerName, projectName)));
             }
         }
     }

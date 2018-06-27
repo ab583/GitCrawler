@@ -15,7 +15,6 @@ public:
     ~GitCrawler();
 
     // Gets next 100 repos at or after <since>
-    // output is inserted into the stream, not returned.
     std::stringstream getRepos(repoId_t since);
 
     // Gets all languages used by the project
@@ -54,14 +53,9 @@ public:
     // note: timezone conversion not performed, times are therefore only accurate +/-12hr
     time_t dateToTimestamp(const std::string& str);
 
-    static void setUserAgent(const std::string& userAgent);
-    static void setAuthToken(const std::string& authToken);
-
 private:
     DatabaseIo m_db;
     bool m_verbose;
-    GitCrawler(const GitCrawler& src) = delete;
-    GitCrawler(GitCrawler&& src) = delete;
 
     unsigned int m_projectId; // ill figure out a cleaner solution later
 
@@ -72,6 +66,9 @@ private:
 
     // automatically specifies user-agent, authentication token, and sets up a few common parameters.
     static std::stringstream makeRequest(const std::string& urlStr);
+
+    GitCrawler(const GitCrawler& src) = delete;
+    GitCrawler(GitCrawler&& src) = delete;
 };
 
 #endif // GITCRAWLER_H
